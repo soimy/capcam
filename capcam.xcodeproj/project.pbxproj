@@ -25,6 +25,7 @@
 		214CCE4618EA568300478740 /* libopencv_superres.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3518EA568300478740 /* libopencv_superres.2.4.8.dylib */; };
 		214CCE4718EA568300478740 /* libopencv_video.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3618EA568300478740 /* libopencv_video.2.4.8.dylib */; };
 		214CCE4818EA568300478740 /* libopencv_videostab.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3718EA568300478740 /* libopencv_videostab.2.4.8.dylib */; };
+		21B0C2AD18EB0CD1005754F3 /* CppTweener.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 21B0C2AB18EB0CD1005754F3 /* CppTweener.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -60,6 +61,8 @@
 		214CCE3518EA568300478740 /* libopencv_superres.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_superres.2.4.8.dylib; path = /opt/local/lib/libopencv_superres.2.4.8.dylib; sourceTree = "<absolute>"; };
 		214CCE3618EA568300478740 /* libopencv_video.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_video.2.4.8.dylib; path = /opt/local/lib/libopencv_video.2.4.8.dylib; sourceTree = "<absolute>"; };
 		214CCE3718EA568300478740 /* libopencv_videostab.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_videostab.2.4.8.dylib; path = /opt/local/lib/libopencv_videostab.2.4.8.dylib; sourceTree = "<absolute>"; };
+		21B0C2AB18EB0CD1005754F3 /* CppTweener.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CppTweener.cpp; sourceTree = SOURCE_ROOT; };
+		21B0C2AC18EB0CD1005754F3 /* CppTweener.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CppTweener.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,6 +113,8 @@
 		214CCE1A18EA55AA00478740 /* capcam */ = {
 			isa = PBXGroup;
 			children = (
+				21B0C2AB18EB0CD1005754F3 /* CppTweener.cpp */,
+				21B0C2AC18EB0CD1005754F3 /* CppTweener.h */,
 				214CCE2418EA561F00478740 /* capcam.1 */,
 				214CCE2518EA561F00478740 /* main.cpp */,
 			);
@@ -191,6 +196,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21B0C2AD18EB0CD1005754F3 /* CppTweener.cpp in Sources */,
 				214CCE2618EA561F00478740 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
