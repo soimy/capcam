@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2102E12118EEE0E600159126 /* traceObj.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 2102E11F18EEE0E600159126 /* traceObj.cpp */; };
 		214CCE2618EA561F00478740 /* main.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 214CCE2518EA561F00478740 /* main.cpp */; };
 		214CCE3818EA568300478740 /* libopencv_calib3d.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE2718EA568300478740 /* libopencv_calib3d.2.4.8.dylib */; };
 		214CCE3918EA568300478740 /* libopencv_contrib.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE2818EA568300478740 /* libopencv_contrib.2.4.8.dylib */; };
@@ -41,6 +42,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		2102E11F18EEE0E600159126 /* traceObj.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = traceObj.cpp; sourceTree = SOURCE_ROOT; };
+		2102E12018EEE0E600159126 /* traceObj.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = traceObj.h; sourceTree = SOURCE_ROOT; };
 		214CCE1818EA55AA00478740 /* capcam */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = capcam; sourceTree = BUILT_PRODUCTS_DIR; };
 		214CCE2418EA561F00478740 /* capcam.1 */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.man; path = capcam.1; sourceTree = SOURCE_ROOT; };
 		214CCE2518EA561F00478740 /* main.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = main.cpp; sourceTree = SOURCE_ROOT; };
@@ -117,6 +120,8 @@
 				21B0C2AC18EB0CD1005754F3 /* CppTweener.h */,
 				214CCE2418EA561F00478740 /* capcam.1 */,
 				214CCE2518EA561F00478740 /* main.cpp */,
+				2102E11F18EEE0E600159126 /* traceObj.cpp */,
+				2102E12018EEE0E600159126 /* traceObj.h */,
 			);
 			path = capcam;
 			sourceTree = "<group>";
@@ -197,6 +202,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				21B0C2AD18EB0CD1005754F3 /* CppTweener.cpp in Sources */,
+				2102E12118EEE0E600159126 /* traceObj.cpp in Sources */,
 				214CCE2618EA561F00478740 /* main.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

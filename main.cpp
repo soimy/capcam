@@ -1,6 +1,6 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/highgui/highgui.hpp>
-#include <pthread.h>
+#include "traceObj.h"
 
 #include <stdio.h>  
 #include <iostream>
@@ -10,6 +10,7 @@
 
 using namespace std;
 using namespace cv;
+//using namespace tween;
 
 // Timer implemention
 class later{
@@ -57,7 +58,7 @@ string cascade_name = "data/haarcascade_frontalface_alt.xml";
 Mat frame;
 // Declare of functions
 void detectObj(Mat& srcFrame);
-void updateGraph();
+//void updateGraph();
 
 int main(int argc, char** argv)
 {
