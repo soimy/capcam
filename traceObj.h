@@ -38,6 +38,8 @@ public:
 private:
     static CvScalar colors[];
     bool inited;
+	void addTween();
+	void sortObj(vector<Rect>& obj);
 };
 
 #endif /* defined(__capcam__traceObj__) */
