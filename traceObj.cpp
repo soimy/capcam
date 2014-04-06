@@ -49,6 +49,11 @@ void traceObj::update(){
         return; // both empty means traceObj detect not envoked
     }
     tweener.step(cvGetTickCount()/cvGetTickFrequency()*1000);
+	if (drawMat){
+		for (vector<Rect>::iterator r = objects.begin(); r != objects.end(); r++){
+			rectangle(overLay, *r, colors[r - objects.begin()]);
+		}
+	}
 	return;
 };
 
