@@ -80,7 +80,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="CppTweener.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="traceObj.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="CppTweener.h" />
+    <ClInclude Include="traceObj.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

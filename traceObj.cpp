@@ -48,7 +48,13 @@ void traceObj::update(){
     if (objects.empty() && goalObjects.empty()) {
         return; // both empty means traceObj detect not envoked
     }
-    tweener.step(cvGetTickCount());
+    tweener.step(cvGetTickCount()/cvGetTickFrequency()*1000);
+	if (drawMat){
+		for (vector<Rect>::iterator r = objects.begin(); r != objects.end(); r++){
+			rectangle(overLay, *r, colors[r - objects.begin()]);
+		}
+	}
+	return;
 };
 
 void traceObj::detect(){
@@ -68,6 +74,17 @@ void traceObj::detect(){
 					Size(50,50), Size(200,200) );
 	t = (double)cvGetTickCount() - t;
     printf("detection time = %gms\n", t / ((double)cvGetTickFrequency()*1000.));
-
+	addTween(); // Add tween animation to objects
 	return;
+};
+
+void traceObj::addTween(){
+	sortObj(goalObjects);
+	for (vector<int>::size_type i = 0;i != goalObjects.size(); i++){
+		int x, y, w, h;
+		x = goalObjects[i].x;
+		y = goalObjects[i].y;
+		w = goalObjects[i].width;
+		h = goalObjects[i].height;
+	}
 };
