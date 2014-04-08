@@ -367,6 +367,7 @@ namespace tween {
 		}
 		void addTween(TweenerParam& param);
 		void removeTween(TweenerParam  *param);
+        void clearTween();
 		void addListener(TweenerListener *listener) ;
 		void removeListener(TweenerListener *listener) ;
 		void setFunction(short funcEnum);

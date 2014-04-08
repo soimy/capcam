@@ -10,7 +10,6 @@
 #define __capcam__traceObj__
 
 #include <iostream>
-#include "cppTweener.h"
 #include <opencv2/opencv.hpp>
 #include <string.h>
 #include <chrono>
@@ -19,32 +18,49 @@
 using namespace std;
 using namespace cv;
 
-class traceObj : public tween::TweenerListener {
+//struct tmpObj {
+//    float x, y, width, height;
+//};
 
+struct pointPool {
+    Point2f pos[10];
+    float radius[10];
+};
+
+class traceObj {
 private:
-    static CvScalar colors[];
     bool inited;
-	void addTween();
-	void sortObj(vector<Rect>& obj);
-
+//	void sortObj(vector<Rect>&);
+    Mat* srcFrame;
+//  tween::Tweener tweener;
+//  vector<float> x,y,r;
+    int64 lastTick;
+    double step;
+    
 public:
     vector<Rect> goalObjects;
     vector<Rect> objects;
+    vector<pointPool> pool;
     string cascade_name;
-    static CascadeClassifier cascade;
-    Mat srcFrame;
+    CascadeClassifier cascade;
 	Mat overLay;
     int sampleRate; //in ms
 	bool drawMat;
+    bool started;
+    static const CvScalar colors[];
 
     traceObj(){
         inited = false;
 		drawMat = true;
+        sampleRate = 200;
+        started = false;
     };
     ~traceObj(){};
     bool init();
+    void attachFrame(Mat&);
     void update();
     void detect();
+    void stop();
 };
 
 #endif /* defined(__capcam__traceObj__) */

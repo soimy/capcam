@@ -291,7 +291,16 @@ namespace tween {
 
 		}
 	
-	
+        void Tweener::clearTween(){
+			total_tweens = tweens.size();
+			tweensIT = tweens.begin();
+            for (int i=0; i <  total_tweens; i++,tweensIT++) {
+					(*tweensIT).cleanProperties();
+					tweens.erase(tweensIT);
+					//std::cout<<"\n-Tween Removed";
+					--total_tweens;
+				}
+        }
 		
 	
 
