@@ -23,19 +23,21 @@ using namespace cv;
 //};
 
 struct pointPool {
-    Point2f pos[10];
+    Point2i pos[10];
     float radius[10];
+    unsigned int avgDist = 200;
+    unsigned int step; // 0 = deactivated, <2 stable, >5 unstable
+    Mat trackId;
 };
 
 class traceObj {
 private:
     bool inited;
-//	void sortObj(vector<Rect>&);
-    Mat* srcFrame;
-//  tween::Tweener tweener;
-//  vector<float> x,y,r;
+    cv::Mat* srcFrame;
     int64 lastTick;
-    double step;
+    double animationStep;
+    void pushPool(vector<Rect>);
+    float matComp(Mat,Mat);
     
 public:
     vector<Rect> goalObjects;
@@ -46,12 +48,16 @@ public:
 	Mat overLay;
     int sampleRate; //in ms
 	bool drawMat;
+    bool drawTrack;
+    bool drawId;
     bool started;
     static const CvScalar colors[];
 
     traceObj(){
         inited = false;
 		drawMat = true;
+        drawTrack = true;
+        drawId = true;
         sampleRate = 200;
         started = false;
     };

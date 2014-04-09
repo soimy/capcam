@@ -25,8 +25,8 @@ int main(int argc, char** argv)
 	//Initialize Object tracing` system
     traceObj fishTrace;
     fishTrace.cascade_name = cascade_name;
-    fishTrace.drawMat = false;
-    fishTrace.sampleRate = 300;
+    fishTrace.drawMat = true;
+    fishTrace.sampleRate = 200;
     
 	//Initialize Camera/VideoInput
 	VideoCapture cap;
@@ -52,10 +52,10 @@ int main(int argc, char** argv)
 		if (frame.empty())
 			continue;
         Mat dispFrame(frame.size(),CV_8UC3);
-        dispFrame = frame ;
-        for(vector<Rect>::iterator r = fishTrace.objects.begin(); r != fishTrace.objects.end(); r++){
-            rectangle(dispFrame, *r, fishTrace.colors[r-fishTrace.objects.begin()]);
-        }
+        dispFrame = frame + fishTrace.overLay ;
+//        for(vector<Rect>::iterator r = fishTrace.objects.begin(); r != fishTrace.objects.end(); r++){
+//            rectangle(dispFrame, *r, fishTrace.colors[r-fishTrace.objects.begin()]);
+//        }
 		imshow("windata",dispFrame);
         fishTrace.update();
         int keyCode = waitKey(20);
