@@ -11,6 +11,7 @@
 #include <string.h>
 #include <chrono>
 #include <future>
+#include <cmath>
 
 using namespace std;
 using namespace cv;
@@ -33,7 +34,6 @@ string cascade_name = "data/haarcascade_frontalface_alt.xml";
 // 15 times faster than the classical float sqrt.
 // Reasonably accurate up to root(32500)
 // Source: http://supp.iar.com/FilesPublic/SUPPORT/000419/AN-G-002.pdf
-
 unsigned int fastSqrt(unsigned int x){
     unsigned int a,b;
     b = x;
@@ -54,8 +54,6 @@ unsigned int calcDist(Point2f a, Point2f b){
     return y;
     
 }
-
-
 
 bool traceObj::init(){
     // Initialize cascade system
@@ -85,31 +83,64 @@ void traceObj::update(){
         return; // both empty means traceObj detect not envoked
     }
     // animationStep control animation position of object
-    animationStep = ((double)(cvGetTickCount()-lastTick))/(double)cvGetTickFrequency()/1000./sampleRate;
+    float animationStep;
+    if(useAnimation)
+        animationStep = ((double)(cvGetTickCount()-lastTick))/(double)cvGetTickFrequency()/1000./sampleRate;
+    else
+        animationStep = 1;
+    
     objects.clear();
     for (vector<pointPool>::size_type i = 0; i != pool.size(); i++){
         
         // if pool member unstable, skip output
-        if (pool[i].step > 5)
+        if (pool[i].step >= 10)
             continue;
         
-        Point2i Pt = pool[i].pos[1] + (pool[i].pos[0] - pool[i].pos[1] ) * animationStep;
-        float r = pool[i].radius[1] + (pool[i].radius[0] - pool[i].radius[1]) * animationStep;
-        Pt = Pt - Point(r,r);
-        objects.push_back(Rect(Pt,Point(r,r)));
-        if (drawMat) {
-            rectangle(overLay, objects[i], colors[i%8]);
+        Rect Rec0 = pool[i].rec[0];
+        Rect Rec1 = pool[i].rec[1];
+        Rect aniRec;
+        Point2i tl0,tl1,wh0,wh1;
+        Point2i tl,wh;
+        tl0 = Point(Rec0.x,Rec0.y);
+        tl1 = Point(Rec1.x,Rec1.y);
+        wh0 = Point(Rec0.width,Rec0.height);
+        wh1 = Point(Rec1.width,Rec1.height);
+
+        tl = tl1+(tl0-tl1)*animationStep;
+        wh = wh1+(wh0-wh1)*animationStep;
+        
+        aniRec = Rect(tl,Size(wh));
+//        Point2i Pt1 = pool[i].pos[1];
+//        Point2i Pt0 = pool[i].pos[0];
+//        float r1 = pool[i].radius[1];
+//        float r0 = pool[i].radius[0];
+//        Point2i Pt = Pt1 + ( Pt0 - Pt1 ) * animationStep;
+//        unsigned int r = r1 + ( r0 - r1 ) * animationStep;
+//        Pt = Pt - Point(r/2,r/2);
+        objects.push_back(aniRec);
+        if (drawMat && useAnimation) {
+                rectangle(*srcFrame, objects[i], colors[i%8]);
             if(drawTrack)
                 for (int j = 0; j < 9; j++) {
                     // if pool cached pos = (0,0) means no cache, stop drawing track
                     if(pool[i].pos[j+1] == Point(0,0))
                         break;
-                    cv::line(overLay, pool[i].pos[j], pool[i].pos[j+1], Scalar(255-j*20, 0, 0));
+                    cv::line(*srcFrame, pool[i].pos[j], pool[i].pos[j+1], Scalar(255-j*20, 0, 0));
                 }
-            if(drawId)
-                cv::putText(overLay, to_string(i), Pt, cv::FONT_HERSHEY_SIMPLEX, 1, colors[i%8]);
+            if(drawId){
+                cv::putText(*srcFrame, "ID: "+to_string(i)+" | step: "+to_string(pool[i].step), tl - Point(0,5), cv::FONT_HERSHEY_PLAIN, 0.8, colors[i%8]);
+            }
         }
     }
+    if (drawMat && !useAnimation) {
+        for (vector<Rect>::iterator r=goalObjects.begin(); r!=goalObjects.end(); r++) {
+            rectangle(*srcFrame, *r, colors[(r-goalObjects.begin())%8]);
+            if(drawId){
+                cv::putText(*srcFrame, "ID: "+to_string((r-goalObjects.begin())), Point(r->x,r->y) - Point(0,5), cv::FONT_HERSHEY_PLAIN, 0.8, colors[(r-goalObjects.begin())%8]);
+            }
+        }
+    }
+    cv::putText(*srcFrame, "Pool: "+to_string(pool.size()), Point(5,20), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255,255,255));
 	return;
 }
 
@@ -117,6 +148,7 @@ void traceObj::stop(){
     started = false;
     inited = false;
     // clear memory
+    goalObjects.clear();
     objects.clear();
     pool.clear();
 }
@@ -134,16 +166,16 @@ void traceObj::detect(){
         double scale = 1.1;
         Mat smallFrame(srcFrame->size(), CV_8UC1);
         cvtColor(*srcFrame, smallFrame, CV_BGR2GRAY);
-    //	resize(smallFrame, smallFrame, Size(256, 256));
+//      resize(smallFrame, smallFrame, Size(256, 256));
         equalizeHist(smallFrame, smallFrame);
 
-        double t = (double)cvGetTickCount(); // start evaluating process time
+//      double t = (double)cvGetTickCount(); // start evaluating process time
         cascade.detectMultiScale(smallFrame, goalObjects,scale,3,
                         CV_HAAR_SCALE_IMAGE|CV_HAAR_DO_CANNY_PRUNING,
-                        Size(50,50), Size(200,200) );
+                        Size(100,100), Size(200,200) );
         pushPool(goalObjects);
-        t = (double)cvGetTickCount() - t;
-        printf("detection time = %gms\n", t / ((double)cvGetTickFrequency()*1000.));
+//      t = (double)cvGetTickCount() - t;
+//      printf("detection time = %gms\n", t / ((double)cvGetTickFrequency()*1000.));
         lastTick = cvGetTickCount();
     }
 	return;
@@ -157,7 +189,15 @@ void traceObj::pushPool(vector<Rect> obj){
     Mat tmpFrame = *srcFrame;
     
     // iterate through all pool member to find proper new trace obj
-    for (vector<Rect>::size_type i = 0; i!= pool.size(); i++) {
+    for (vector<pointPool>::size_type i = 0; i!= pool.size(); i++) {
+        
+        // Check if pool member's step > 15, if true, delete it
+        if (pool[i].step > 50) {
+            pool.erase(pool.begin()+i);
+            i--;
+            continue;
+        }
+        
         bool cooked = false;
         // iterate through all new trace objs to find most fit pool member
         for (vector<Rect>::size_type m = 0; m!= obj.size(); m++){
@@ -173,19 +213,25 @@ void traceObj::pushPool(vector<Rect> obj){
             
             // if newDist is acceptable, go for graphics compare
             // expand distance check for greater step value
-            if (newDist < pool[i].avgDist * (pool[i].step+1)) {
+            int delta = newDist - pool[i].avgDist;
+            delta = abs(delta);
+            unsigned int rad = pool[i].radius[0];
+            if (delta < rad) {
                 
                 // if graphics compare match, start pushing to pool
                 if (matComp(tmpFrame(obj[m]).clone(), pool[i].trackId) > 0.7) {
                     for (int j = 9; j > 0; j--) {
                         pool[i].pos[j] = pool[i].pos[j-1];
                         pool[i].radius[j] = pool[i].radius[j-1];
+                        pool[i].rec[j] = pool[i].rec[j-1];
                     }
                     pool[i].pos[0] = objPos;
                     pool[i].radius[0] = objr;
+                    pool[i].rec[0] = obj[m];
                     pool[i].avgDist = pool[i].avgDist*.5 + newDist *.5;
                     
-                    pool[i].step = 1; // important to set step to 1 for success trace
+                    if(pool[i].step >1)
+                        pool[i].step --; // important to set step to 1 for success trace
                     // copy the newly traced img to trackId
                     pool[i].trackId = tmpFrame(obj[m]).clone();
                     
@@ -197,10 +243,17 @@ void traceObj::pushPool(vector<Rect> obj){
                 }
             }
         }
-        // if no proper trace obj found, pool member go unstable
-        if(!cooked)
+        if(!cooked){
+            // Copy last status to current status
+            for (int j = 9; j > 0; j--) {
+                pool[i].pos[j] = pool[i].pos[j-1];
+                pool[i].radius[j] = pool[i].radius[j-1];
+                pool[i].rec[j] = pool[i].rec[j-1];
+            }
+            // if no proper trace obj found, pool member go unstable
             pool[i].step++;
-        // Reset pool member initial value
+            
+        }
     }
     
     // Check if there r still trace obj remain unmatched
@@ -208,23 +261,29 @@ void traceObj::pushPool(vector<Rect> obj){
     if (!obj.empty()) {
         for (vector<Rect>::iterator r=obj.begin(); r!=obj.end(); r++) {
             pointPool newPool;
-            Point2f objPos;
-            float objr;
+            Point2i objPos;
+            unsigned int objr;
             
             objPos.x = r->x + r->width/2;
             objPos.y = r->y + r->height/2;
             objr = r->width;
             // Add current trace obj attr to new pool member
+            for(int i=0; i<10; i++){
+                newPool.pos[i] = Point(0,0);
+                newPool.radius[i] = 0;
+                newPool.rec[i] = Rect(Point(0,0),Size(0,0));
+            }
             newPool.pos[0] = objPos;
             newPool.radius[0] = objr;
-            newPool.step ++; // activate step
+            newPool.rec[0] = *r;
+            newPool.step = 11; // activate step and set to unstable
             newPool.trackId = tmpFrame(*r).clone(); // copy the traced img to trackId
             
             // add to pool
             pool.push_back(newPool);
         }
     }
-    cout << "Traced Objects' pool size: " << pool.size() << endl;
+//    cout << "Traced Objects' pool size: " << pool.size() << endl;
     return;
 }
 

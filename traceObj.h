@@ -24,8 +24,9 @@ using namespace cv;
 
 struct pointPool {
     Point2i pos[10];
-    float radius[10];
-    unsigned int avgDist = 200;
+    Rect rec[10];
+    unsigned int radius[10];
+    unsigned int avgDist = 50;
     unsigned int step; // 0 = deactivated, <2 stable, >5 unstable
     Mat trackId;
 };
@@ -33,9 +34,9 @@ struct pointPool {
 class traceObj {
 private:
     bool inited;
-    cv::Mat* srcFrame;
+    Mat *srcFrame;
     int64 lastTick;
-    double animationStep;
+//    double animationStep;
     void pushPool(vector<Rect>);
     float matComp(Mat,Mat);
     
@@ -47,6 +48,7 @@ public:
     CascadeClassifier cascade;
 	Mat overLay;
     int sampleRate; //in ms
+    bool useAnimation;
 	bool drawMat;
     bool drawTrack;
     bool drawId;
@@ -60,6 +62,7 @@ public:
         drawId = true;
         sampleRate = 200;
         started = false;
+        useAnimation = true;
     };
     ~traceObj(){};
     bool init();

@@ -27,6 +27,7 @@ int main(int argc, char** argv)
     fishTrace.cascade_name = cascade_name;
     fishTrace.drawMat = true;
     fishTrace.sampleRate = 200;
+    fishTrace.useAnimation = true;
     
 	//Initialize Camera/VideoInput
 	VideoCapture cap;
@@ -51,16 +52,17 @@ int main(int argc, char** argv)
 		cap >> frame;
 		if (frame.empty())
 			continue;
-        Mat dispFrame(frame.size(),CV_8UC3);
-        dispFrame = frame + fishTrace.overLay ;
+//        Mat dispFrame(frame.size(),CV_8UC3);
+//        dispFrame = frame + fishTrace.overLay ;
 //        for(vector<Rect>::iterator r = fishTrace.objects.begin(); r != fishTrace.objects.end(); r++){
 //            rectangle(dispFrame, *r, fishTrace.colors[r-fishTrace.objects.begin()]);
 //        }
-		imshow("windata",dispFrame);
         fishTrace.update();
+		imshow("windata",frame);
         int keyCode = waitKey(20);
         if (keyCode == 'q' || keyCode == 'Q'){
             fishTrace.stop();
+            this_thread::sleep_for(std::chrono::milliseconds(500));
             break;
         }
 	}
