@@ -24,11 +24,14 @@ using namespace cv;
 
 struct pointPool {
     Point2i pos[10];
+    Point2i stablizedPos[10];
+    Point2i predicPos[10];
     Rect rec[10];
     unsigned int radius[10];
     unsigned int avgDist = 50;
     unsigned int step; // 0 = deactivated, <2 stable, >5 unstable
     Mat trackId;
+    KalmanFilter kfc;
 };
 
 class traceObj {
