@@ -19,33 +19,35 @@
 #if !defined(_MUNKRES_H_)
 #define _MUNKRES_H_
 
-#include "matrix.h"
-
 #include <list>
 #include <utility>
-
+#include <opencv2/opencv.hpp>
 
 class Munkres {
 public:
-  void solve(Matrix<double> &m);
+    Munkres();
+    ~Munkres(){};
+    void solve(cv::Mat_<int> &m);
+    void diag(bool);
 private:
-  static const int NORMAL = 0;
-  static const int STAR = 1;
-  static const int PRIME = 2; 
-  inline bool find_uncovered_in_matrix(double, unsigned int&, unsigned int&) const;
-  inline bool pair_in_list(const std::pair<int,int> &, const std::list<std::pair<int,int> > &);
-  int step1(void);
-  int step2(void);
-  int step3(void);
-  int step4(void);
-  int step5(void);
-  int step6(void);
-
-  Matrix<int> mask_matrix;
-  Matrix<double> matrix;
-  bool *row_mask;
-  bool *col_mask;
-  unsigned int saverow, savecol;
+    static const int NORMAL = 0;
+    static const int STAR = 1;
+    static const int PRIME = 2;
+    inline bool find_uncovered_in_matrix(double, unsigned int&, unsigned int&) const;
+    inline bool pair_in_list(const std::pair<int,int> &, const std::list<std::pair<int,int> > &);
+    int step1(void);
+    int step2(void);
+    int step3(void);
+    int step4(void);
+    int step5(void);
+    int step6(void);
+    
+    cv::Mat_<int> mask_matrix;
+    cv::Mat_<int> matrix;
+    bool *row_mask;
+    bool *col_mask;
+    unsigned int saverow, savecol;
+    bool isDiag;
 };
 
 #endif /* !defined(_MUNKRES_H_) */

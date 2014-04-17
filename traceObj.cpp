@@ -7,7 +7,7 @@
 //
 
 #include "traceObj.h"
-#include "munkres/munkres.h"
+#include "munkres.h"
 
 #include <opencv2/opencv.hpp>
 #include <string.h>
@@ -133,6 +133,7 @@ void traceObj::update(){
                     if(pool[i].pos[j+1] == Point(0,0))
                         break;
                     // Draw detected track
+                    drawCross(*srcFrame, pool[i].pos[j], Scalar(100, 100, 255-j*20), 3);
                     cv::line(*srcFrame, pool[i].pos[j], pool[i].pos[j+1], Scalar(100, 100, 255-j*20));
                     // Draw kalman filterd track
                     cv::line(*srcFrame, pool[i].stablizedPos[j], pool[i].stablizedPos[j+1], Scalar(100, 255-j*20, 255-j*20));
@@ -218,7 +219,7 @@ void traceObj::pushPool(vector<Rect> obj){
 //    vector< vector<int> > assign_matrix;
     int rows = (int)pool.size();
     int cols = (int)obj.size();
-    Matrix<double> delta_matrix(rows,cols);
+    Mat_<int> delta_matrix(rows,cols);
 //    delta_matrix.resize(pool.size(), vector<int>(obj.size(),0));
 //    assign_matrix.resize(pool.size(), vector<int>(obj.size(),0));
     
@@ -369,7 +370,7 @@ void traceObj::pushPool(vector<Rect> obj){
     for (int j=0; j<cols; j++) {
         bool tag = true;
         for (int i=0; i<rows; i++) {
-            if(delta_matrix(i,j) == 1)
+            if(delta_matrix(i,j) == 0)
                 tag = false;
         }
         if (tag) {
@@ -391,7 +392,7 @@ void traceObj::pushPool(vector<Rect> obj){
                 newPool.predicPos[0] = objPos;
                 newPool.radius[0] = objr;
                 newPool.rec[0] = *r;
-                newPool.step = 11; // activate step and set to unstable
+                newPool.step = 15; // activate step and set to unstable
                 newPool.trackId = tmpFrame(*r).clone(); // copy the traced img to trackId
                 
                 // Initialize the Kalman filter for position prediction
