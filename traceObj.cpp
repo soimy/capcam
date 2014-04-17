@@ -7,7 +7,8 @@
 //
 
 #include "traceObj.h"
-#include "hungarian.h"
+#include "munkres/munkres.h"
+
 #include <opencv2/opencv.hpp>
 #include <string.h>
 #include <chrono>
@@ -29,6 +30,7 @@ const CvScalar traceObj::colors[] = {
     };
 
 float legacy; // for detection CPU time caculator
+unsigned long trackerCounter; // for tracker counter
 
 string cascade_name = "data/haarcascade_frontalface_alt.xml";
 
@@ -96,7 +98,7 @@ void traceObj::update(){
     for (vector<pointPool>::size_type i = 0; i != pool.size(); i++){
         
         // if pool member unstable, skip output
-        if (pool[i].step >= 5 )
+        if (pool[i].step >= 10 )
             continue;
         
 //        Rect Rec0 = pool[i].rec[0];
@@ -154,7 +156,7 @@ void traceObj::update(){
             }
         }
     }
-    cv::putText(*srcFrame, "Pool="+to_string(pool.size()) +" | Detect Lag="+to_string((int)legacy+sampleRate)+" ms", Point(5,20), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255,255,255));
+    cv::putText(*srcFrame, "Pool: "+to_string(pool.size()) +" Detect Lag: "+to_string((int)legacy+sampleRate)+" ms Tracker: "+to_string(trackerCounter), Point(5,20), cv::FONT_HERSHEY_PLAIN, 1, Scalar(255,255,255));
 	return;
 }
 
@@ -192,6 +194,7 @@ void traceObj::detect(){
 //        printf("detection time = %gms\n", t / ((double)cvGetTickFrequency()*1000.));
         legacy = t / ((double)cvGetTickFrequency()*1000.);
         lastTick = cvGetTickCount();
+        trackerCounter = goalObjects.size();
     }
 	return;
 }
@@ -211,20 +214,23 @@ void traceObj::pushPool(vector<Rect> obj){
         }
     }
     
-    vector< vector<int> > delta_matrix;
-    vector< vector<int> > assign_matrix;
-    delta_matrix.resize(pool.size(), vector<int>(obj.size(),0));
-    assign_matrix.resize(pool.size(), vector<int>(obj.size(),0));
+//    vector< vector<int> > delta_matrix;
+//    vector< vector<int> > assign_matrix;
+    int rows = (int)pool.size();
+    int cols = (int)obj.size();
+    Matrix<double> delta_matrix(rows,cols);
+//    delta_matrix.resize(pool.size(), vector<int>(obj.size(),0));
+//    assign_matrix.resize(pool.size(), vector<int>(obj.size(),0));
     
     
     // iterate through all pool member to find proper new trace obj
     for (vector<pointPool>::size_type i = 0; i!= pool.size(); i++) {
         
-        int smallestDelta = 1000;
-        vector<Rect>::size_type smallestIndex = 0;
+//        int smallestDelta = 1000;
+//        vector<Rect>::size_type smallestIndex = 0;
         Point2f objPos;
         float objr;
-        unsigned int newDist, smallDist = 50;
+        unsigned int newDist;//, smallDist = 50;
         
         // kalman prediction setup
         Mat prediction = pool[i].kfc.predict();
@@ -234,9 +240,10 @@ void traceObj::pushPool(vector<Rect> obj){
         else
             predictPt = Point(prediction.at<float>(0),prediction.at<float>(1));
         
-        Mat estimated;
-        Point2i stablizedPt;
-        Mat_<float> measurement(2,1);
+        // Push predicted point to pool cache
+        for (int k = 9; k > 0; k--)
+            pool[i].predicPos[k] = pool[i].predicPos[k-1];
+        pool[i].predicPos[0] = predictPt;
 
         // iterate through all new trace objs to find most fit pool member
         for (vector<Rect>::size_type m = 0; m!= obj.size(); m++){
@@ -245,38 +252,58 @@ void traceObj::pushPool(vector<Rect> obj){
             objPos.y = obj[m].y + obj[m].height/2;
             objr = obj[m].width;
         
-            newDist = calcDist(pool[i].pos[0], objPos);
+            newDist = calcDist(predictPt, objPos);
+            delta_matrix((unsigned int)i,(unsigned int)m) = newDist;
             
             // if newDist is acceptable, go for graphics compare
             // expand distance check for greater step value
-            int delta = newDist - pool[i].avgDist;
-            delta = abs(delta);
-            if(delta < smallestDelta){
-                smallestDelta = delta;
-                smallestIndex = m;
-                smallDist = newDist;
-            }
+//            int delta = newDist - pool[i].avgDist;
+//            delta = abs(delta);
+//            if(delta < smallestDelta){
+//                smallestDelta = delta;
+//                smallestIndex = m;
+//                smallDist = newDist;
+//            }
 
         }
-        if (smallestDelta < pool[i].radius[0] * 0.6) { // delta smaller than side by side detect rectangle
+    }
+    
+    // Solve Hungarian assignment
+    Munkres m;
+    m.solve(delta_matrix);
+    
+//    if (smallestDelta < pool[i].radius[0] * 0.6) { // delta smaller than side by side detect rectangle
+    
+    for( int i=0; i!=rows; i++){
+        
+        Mat estimated;
+        Point2i stablizedPt;
+        Mat_<float> measurement(2,1);
+        
+        Point2i objPos;
+        unsigned int objr;
+        bool assigned = false;
+        
+        // iterate through current columne to find proper assignment
+        for (int j=0; j<cols; j++) {
+            // skip  not assigned
+            if(delta_matrix(i,j) != 0)
+                continue;
             
-            
-          
             // if graphics compare match, start pushing to pool
-            if (matComp(tmpFrame(obj[smallestIndex]).clone(), pool[i].trackId) > 0.7) {
+            if (matComp(tmpFrame(obj[j]).clone(), pool[i].trackId) > 0.7) {
                 // Shift the pool position
-                for (int j = 9; j > 0; j--) {
-                    pool[i].pos[j] = pool[i].pos[j-1];
-                    pool[i].stablizedPos[j] = pool[i].stablizedPos[j-1];
-                    pool[i].predicPos[j] = pool[i].predicPos[j-1];
-                    pool[i].radius[j] = pool[i].radius[j-1];
-                    pool[i].rec[j] = pool[i].rec[j-1];
+                for (int k = 9; k > 0; k--) {
+                    pool[i].pos[k] = pool[i].pos[k-1];
+                    pool[i].stablizedPos[k] = pool[i].stablizedPos[k-1];
+                    pool[i].predicPos[k] = pool[i].predicPos[k-1];
+                    pool[i].radius[k] = pool[i].radius[k-1];
+                    pool[i].rec[k] = pool[i].rec[k-1];
                 }
                 
-                objPos.x = obj[smallestIndex].x + obj[smallestIndex].width/2;
-                objPos.y = obj[smallestIndex].y + obj[smallestIndex].height/2;
-                objr = obj[smallestIndex].width;
-                
+                objPos.x = obj[j].x + obj[j].width/2;
+                objPos.y = obj[j].y + obj[j].height/2;
+                objr = obj[j].width;
                 
                 
                 // evaluate kalman prediction
@@ -286,39 +313,38 @@ void traceObj::pushPool(vector<Rect> obj){
                 
                 estimated = pool[i].kfc.correct(measurement);
                 stablizedPt = Point(estimated.at<float>(0),estimated.at<float>(1));
-                if(predictPt.x == 0)
-                    predictPt = stablizedPt;
-                
-                
                 
                 
                 pool[i].pos[0] = objPos;
                 pool[i].stablizedPos[0] = stablizedPt;
-                pool[i].predicPos[0] = predictPt;
                 pool[i].radius[0] = objr;
-                pool[i].rec[0] = obj[smallestIndex];
-                pool[i].avgDist = pool[i].avgDist*.75 + smallDist *.25;
+                pool[i].rec[0] = obj[j];
+//                pool[i].avgDist = pool[i].avgDist*.75 + smallDist *.25;
                 
                 if(pool[i].step >1)
                     pool[i].step --; // important to set step to 1 for success trace
                 // copy the newly traced img to trackId
-                pool[i].trackId = tmpFrame(obj[smallestIndex]).clone();
+                pool[i].trackId = tmpFrame(obj[j]).clone();
                 
                 // Remove from trace obj list to avoid duplicatation
+//                obj.erase(obj.begin() + j);
                 // break the trace obj iteration, continue to next pool member
-                obj.erase(obj.begin() + smallestIndex);
+                assigned = true;
+                break; // finish assignment, end the iteration
             }
-        }else{
-            // Copy last status to current status
-            for (int j = 9; j > 0; j--) {
-                pool[i].pos[j] = pool[i].pos[j-1];
-                pool[i].stablizedPos[j] = pool[i].stablizedPos[j-1];
-                pool[i].predicPos[j] = pool[i].predicPos[j-1];
-                pool[i].radius[j] = pool[i].radius[j-1];
-                pool[i].rec[j] = pool[i].rec[j-1];
+        }
+        // If no proper assignment found
+        // Copy last status to current status
+        if(!assigned){
+            for (int k = 9; k > 0; k--) {
+                pool[i].pos[k] = pool[i].pos[k-1];
+                pool[i].stablizedPos[k] = pool[i].stablizedPos[k-1];
+                pool[i].radius[k] = pool[i].radius[k-1];
+                pool[i].rec[k] = pool[i].rec[k-1];
             }
             // If coresponding detected position is missing,
             // Set estimated Position to current Position
+            Point2i predictPt = pool[i].predicPos[0];
             if(predictPt.x != 0){
                 measurement(0) = predictPt.x;
                 measurement(1) = predictPt.y;
@@ -334,55 +360,67 @@ void traceObj::pushPool(vector<Rect> obj){
             pool[i].predicPos[0] = predictPt;
             // if no proper trace obj found, pool member go unstable
             pool[i].step++;
-            
         }
+        
     }
     
-    // Check if there r still trace obj remain unmatched
-    // If so, add pool member to be assigned
-    if (!obj.empty()) {
-        for (vector<Rect>::iterator r=obj.begin(); r!=obj.end(); r++) {
-            pointPool newPool;
-            Point2i objPos;
-            unsigned int objr;
-            
-            objPos.x = r->x + r->width/2;
-            objPos.y = r->y + r->height/2;
-            objr = r->width;
-            
-            newPool.pos[0] = objPos;
-            newPool.stablizedPos[0] = objPos;
-            newPool.predicPos[0] = objPos;
-            newPool.radius[0] = objr;
-            newPool.rec[0] = *r;
-            newPool.step = 11; // activate step and set to unstable
-            newPool.trackId = tmpFrame(*r).clone(); // copy the traced img to trackId
-            
-            // Initialize the Kalman filter for position prediction
-            //
-            newPool.kfc.init(4, 2, 0);
-            // Setup transitionMatrix to
-            // 1, 0, 1, 0
-            // 0, 1, 0, 1
-            // 0, 0, 1, 0
-            // 0, 0, 0, 1
-            // very weird, don't understand ....
-            newPool.kfc.transitionMatrix = *(Mat_<float>(4,4) << 1,0,1,0, 0,1,0,1, 0,0,1,0, 0,0,0,1);
-            newPool.kfc.statePost.setTo(Scalar(objPos.x,objPos.y));
-            newPool.kfc.statePre.at<float>(0) = objPos.x;
-            newPool.kfc.statePre.at<float>(1) = objPos.y;
-            newPool.kfc.statePre.at<float>(2) = 0;
-            newPool.kfc.statePre.at<float>(3) = 0;
-            setIdentity(newPool.kfc.measurementMatrix);
-            setIdentity(newPool.kfc.processNoiseCov, Scalar::all(1e-2));
-            setIdentity(newPool.kfc.measurementNoiseCov, Scalar::all(1e-1));
-            setIdentity(newPool.kfc.errorCovPost, Scalar::all(0.1));
-            
-            // add to pool
-            pool.push_back(newPool);
+    
+    // iterate through columns to find un-assigned tracker
+    for (int j=0; j<cols; j++) {
+        bool tag = true;
+        for (int i=0; i<rows; i++) {
+            if(delta_matrix(i,j) == 1)
+                tag = false;
         }
+        if (tag) {
+            
+            // insert new tracker to pool
+            // and do pool member initializing
+            //
+            for (vector<Rect>::iterator r=obj.begin(); r!=obj.end(); r++) {
+                pointPool newPool;
+                Point2i objPos;
+                unsigned int objr;
+                
+                objPos.x = r->x + r->width/2;
+                objPos.y = r->y + r->height/2;
+                objr = r->width;
+                
+                newPool.pos[0] = objPos;
+                newPool.stablizedPos[0] = objPos;
+                newPool.predicPos[0] = objPos;
+                newPool.radius[0] = objr;
+                newPool.rec[0] = *r;
+                newPool.step = 11; // activate step and set to unstable
+                newPool.trackId = tmpFrame(*r).clone(); // copy the traced img to trackId
+                
+                // Initialize the Kalman filter for position prediction
+                //
+                newPool.kfc.init(4, 2, 0);
+                // Setup transitionMatrix to
+                // 1, 0, 1, 0
+                // 0, 1, 0, 1
+                // 0, 0, 1, 0
+                // 0, 0, 0, 1
+                // very weird, don't understand ....
+                newPool.kfc.transitionMatrix = *(Mat_<float>(4,4) << 1,0,1,0, 0,1,0,1, 0,0,1,0, 0,0,0,1);
+                newPool.kfc.statePost.setTo(Scalar(objPos.x,objPos.y));
+                newPool.kfc.statePre.at<float>(0) = objPos.x;
+                newPool.kfc.statePre.at<float>(1) = objPos.y;
+                newPool.kfc.statePre.at<float>(2) = 0;
+                newPool.kfc.statePre.at<float>(3) = 0;
+                setIdentity(newPool.kfc.measurementMatrix);
+                setIdentity(newPool.kfc.processNoiseCov, Scalar::all(1e-2));
+                setIdentity(newPool.kfc.measurementNoiseCov, Scalar::all(1e-1));
+                setIdentity(newPool.kfc.errorCovPost, Scalar::all(0.1));
+                
+                // add to pool
+                pool.push_back(newPool);
+            }
+
+        }
+        
     }
-//    cout << "Traced Objects' pool size: " << pool.size() << endl;
     return;
 }
 

@@ -26,7 +26,6 @@
 		214CCE4618EA568300478740 /* libopencv_superres.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3518EA568300478740 /* libopencv_superres.2.4.8.dylib */; };
 		214CCE4718EA568300478740 /* libopencv_video.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3618EA568300478740 /* libopencv_video.2.4.8.dylib */; };
 		214CCE4818EA568300478740 /* libopencv_videostab.2.4.8.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 214CCE3718EA568300478740 /* libopencv_videostab.2.4.8.dylib */; };
-		217046B618FA458100DCC282 /* hungarian.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 217046B418FA458100DCC282 /* hungarian.cpp */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -64,8 +63,7 @@
 		214CCE3518EA568300478740 /* libopencv_superres.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_superres.2.4.8.dylib; path = /opt/local/lib/libopencv_superres.2.4.8.dylib; sourceTree = "<absolute>"; };
 		214CCE3618EA568300478740 /* libopencv_video.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_video.2.4.8.dylib; path = /opt/local/lib/libopencv_video.2.4.8.dylib; sourceTree = "<absolute>"; };
 		214CCE3718EA568300478740 /* libopencv_videostab.2.4.8.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libopencv_videostab.2.4.8.dylib; path = /opt/local/lib/libopencv_videostab.2.4.8.dylib; sourceTree = "<absolute>"; };
-		217046B418FA458100DCC282 /* hungarian.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = hungarian.cpp; sourceTree = SOURCE_ROOT; };
-		217046B518FA458100DCC282 /* hungarian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = hungarian.h; sourceTree = SOURCE_ROOT; };
+		21FB464018FF73780057CAAD /* munkres */ = {isa = PBXFileReference; lastKnownFileType = folder; path = munkres; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -116,8 +114,7 @@
 		214CCE1A18EA55AA00478740 /* capcam */ = {
 			isa = PBXGroup;
 			children = (
-				217046B418FA458100DCC282 /* hungarian.cpp */,
-				217046B518FA458100DCC282 /* hungarian.h */,
+				21FB464018FF73780057CAAD /* munkres */,
 				214CCE2418EA561F00478740 /* capcam.1 */,
 				214CCE2518EA561F00478740 /* main.cpp */,
 				2102E11F18EEE0E600159126 /* traceObj.cpp */,
@@ -203,7 +200,6 @@
 			files = (
 				2102E12118EEE0E600159126 /* traceObj.cpp in Sources */,
 				214CCE2618EA561F00478740 /* main.cpp in Sources */,
-				217046B618FA458100DCC282 /* hungarian.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
