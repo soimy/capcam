@@ -98,24 +98,7 @@ void traceObj::update(){
     for (vector<pointPool>::size_type i = 0; i != pool.size(); i++){
         
         // if pool member unstable, skip output
-        if (pool[i].step >= 10 )
-            continue;
-        
-//        Rect Rec0 = pool[i].rec[0];
-//        Rect Rec1 = pool[i].rec[1];
-//        Rect aniRec;
-//        Point2i tl0,tl1,wh0,wh1;
-//        Point2i tl,wh;
-//        tl0 = Point(Rec0.x,Rec0.y);
-//        tl1 = Point(Rec1.x,Rec1.y);
-//        wh0 = Point(Rec0.width,Rec0.height);
-//        wh1 = Point(Rec1.width,Rec1.height);
-//
-//        tl = tl1+(tl0-tl1)*animationStep;
-//        wh = wh1+(wh0-wh1)*animationStep;
-//        
-//        aniRec = Rect(tl,Size(wh));
-//        objects.push_back(aniRec);
+//        if (pool[i].step >= 10 ) continue;
         
         Point2i Pt1 = pool[i].stablizedPos[1];
         Point2i Pt0 = pool[i].stablizedPos[0];
@@ -279,7 +262,7 @@ void traceObj::pushPool(vector<Rect> obj){
         
         Mat estimated;
         Point2i stablizedPt;
-        Mat_<float> measurement(2,1);
+        Mat_<float> measurement(3,1);
         
         Point2i objPos;
         unsigned int objr;
@@ -311,6 +294,7 @@ void traceObj::pushPool(vector<Rect> obj){
                 //
                 measurement(0) = objPos.x;
                 measurement(1) = objPos.y;
+                measurement(2) = objr;
                 
                 estimated = pool[i].kfc.correct(measurement);
                 stablizedPt = Point(estimated.at<float>(0),estimated.at<float>(1));
@@ -318,7 +302,7 @@ void traceObj::pushPool(vector<Rect> obj){
                 
                 pool[i].pos[0] = objPos;
                 pool[i].stablizedPos[0] = stablizedPt;
-                pool[i].radius[0] = objr;
+                pool[i].radius[0] = (int)estimated.at<float>(2);
                 pool[i].rec[0] = obj[j];
 //                pool[i].avgDist = pool[i].avgDist*.75 + smallDist *.25;
                 
@@ -349,16 +333,19 @@ void traceObj::pushPool(vector<Rect> obj){
             if(predictPt.x != 0){
                 measurement(0) = predictPt.x;
                 measurement(1) = predictPt.y;
+                measurement(2) = pool[i].radius[0];
                 pool[i].pos[0] = predictPt;
             }else{
                 measurement(0) = pool[i].pos[0].x;
                 measurement(1) = pool[i].pos[0].y;
+                measurement(2) = pool[i].radius[0];
                 // pool[i].pos[0] remain untouched
             }
             estimated = pool[i].kfc.correct(measurement);
             stablizedPt = Point(estimated.at<float>(0),estimated.at<float>(1));
             pool[i].stablizedPos[0] = stablizedPt;
             pool[i].predicPos[0] = predictPt;
+            pool[i].radius[0] = estimated.at<float>(2);
             // if no proper trace obj found, pool member go unstable
             pool[i].step++;
         }
@@ -397,19 +384,35 @@ void traceObj::pushPool(vector<Rect> obj){
                 
                 // Initialize the Kalman filter for position prediction
                 //
-                newPool.kfc.init(4, 2, 0);
+                newPool.kfc.init(6, 3, 0);
                 // Setup transitionMatrix to
                 // 1, 0, 1, 0
                 // 0, 1, 0, 1
                 // 0, 0, 1, 0
                 // 0, 0, 0, 1
                 // very weird, don't understand ....
-                newPool.kfc.transitionMatrix = *(Mat_<float>(4,4) << 1,0,1,0, 0,1,0,1, 0,0,1,0, 0,0,0,1);
-                newPool.kfc.statePost.setTo(Scalar(objPos.x,objPos.y));
+                newPool.kfc.transitionMatrix = *(Mat_<float>(6,6)
+                                            <<  1,0,0,3,0,0,
+                                                0,1,0,0,3,0,
+                                                0,0,1,0,0,1,
+                                                0,0,0,1,0,0,
+                                                0,0,0,0,1,0,
+                                                0,0,0,0,0,1);
+                
+                newPool.kfc.statePost.at<float>(0) = objPos.x;
+                newPool.kfc.statePost.at<float>(1) = objPos.y;
+                newPool.kfc.statePost.at<float>(2) = objr;
+                newPool.kfc.statePost.at<float>(3) = 0;
+                newPool.kfc.statePost.at<float>(4) = 0;
+                newPool.kfc.statePost.at<float>(5) = 0;
+                
                 newPool.kfc.statePre.at<float>(0) = objPos.x;
                 newPool.kfc.statePre.at<float>(1) = objPos.y;
-                newPool.kfc.statePre.at<float>(2) = 0;
+                newPool.kfc.statePre.at<float>(2) = objr;
                 newPool.kfc.statePre.at<float>(3) = 0;
+                newPool.kfc.statePre.at<float>(4) = 0;
+                newPool.kfc.statePre.at<float>(5) = 0;
+                
                 setIdentity(newPool.kfc.measurementMatrix);
                 setIdentity(newPool.kfc.processNoiseCov, Scalar::all(1e-2));
                 setIdentity(newPool.kfc.measurementNoiseCov, Scalar::all(1e-1));
@@ -426,5 +429,5 @@ void traceObj::pushPool(vector<Rect> obj){
 }
 
 float traceObj::matComp(cv::Mat newId, cv::Mat srcId){
-    return 1.;
+    return 1.; //Just return true by now, will do some more work future
 }

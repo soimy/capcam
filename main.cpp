@@ -13,8 +13,8 @@ using namespace cv;
 
 
 const string cascade_name = "data/haarcascade_frontalface_alt.xml";
-int capWidth = 640;
-int capHeight = 480;
+int capWidth = 1280;
+int capHeight = 720;
 // Declare of functions
 //void detectObj(Mat& srcFrame);
 //void updateGraph();
@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     traceObj fishTrace;
     fishTrace.cascade_name = cascade_name;
     fishTrace.drawMat = true;
-    fishTrace.sampleRate = 200;
+    fishTrace.sampleRate = 300;
     fishTrace.useAnimation = true;
     
 	//Initialize Camera/VideoInput
