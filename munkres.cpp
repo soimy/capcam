@@ -61,7 +61,7 @@ replace_infinites(cv::Mat_<int> &matrix) {
         return;
     double max = matrix(0, 0);
     const auto infinity = std::numeric_limits<int>::infinity();
-    
+
     // Find the greatest value in the matrix that isn't infinity.
     for ( unsigned int row = 0 ; row < rows ; row++ ) {
         for ( unsigned int col = 0 ; col < columns ; col++ ) {
@@ -74,7 +74,7 @@ replace_infinites(cv::Mat_<int> &matrix) {
             }
         }
     }
-    
+
     // a value higher than the maximum value present in the matrix.
     if ( max == infinity ) {
         // This case only occurs when all values are infinite.
@@ -82,7 +82,7 @@ replace_infinites(cv::Mat_<int> &matrix) {
     } else {
         max++;
     }
-    
+
     for ( unsigned int row = 0 ; row < rows ; row++ ) {
         for ( unsigned int col = 0 ; col < columns ; col++ ) {
             if ( matrix(row, col) == infinity ) {
@@ -90,19 +90,19 @@ replace_infinites(cv::Mat_<int> &matrix) {
             }
         }
     }
-    
+
 }
 
 void
 minimize_along_direction(cv::Mat_<int> &matrix, bool over_columns) {
     const unsigned int outer_size = over_columns ? matrix.cols : matrix.rows,
     inner_size = over_columns ? matrix.rows : matrix.cols;
-    
+
     // Look for a minimum value to subtract from all values along
     // the "outer" direction.
     for ( unsigned int i = 0 ; i < outer_size ; i++ ) {
         double min = over_columns ? matrix(0, i) : matrix(i, 0);
-        
+
         // As long as the current minimum is greater than zero,
         // keep looking for the minimum.
         // Start at one because we already have the 0th value in min.
@@ -111,7 +111,7 @@ minimize_along_direction(cv::Mat_<int> &matrix, bool over_columns) {
                                 min,
                                 over_columns ? matrix(j, i) : matrix(i, j));
         }
-        
+
         if ( min > 0 ) {
             for ( unsigned int j = 0 ; j < inner_size ; j++ ) {
                 if ( over_columns ) {
@@ -129,7 +129,7 @@ bool
 Munkres::find_uncovered_in_matrix(double item, unsigned int &row, unsigned int &col) const {
     unsigned int rows = matrix.rows,
     columns = matrix.cols;
-    
+
     for ( row = 0 ; row < rows ; row++ ) {
         if ( !row_mask[row] ) {
             for ( col = 0 ; col < columns ; col++ ) {
@@ -141,7 +141,7 @@ Munkres::find_uncovered_in_matrix(double item, unsigned int &row, unsigned int &
             }
         }
     }
-    
+
     return false;
 }
 
@@ -152,7 +152,7 @@ Munkres::pair_in_list(const std::pair<int,int> &needle, const std::list<std::pai
             return true;
         }
     }
-    
+
     return false;
 }
 
@@ -160,7 +160,7 @@ int
 Munkres::step1(void) {
     const unsigned int rows = matrix.rows,
     columns = matrix.cols;
-    
+
     for ( unsigned int row = 0 ; row < rows ; row++ ) {
         for ( unsigned int col = 0 ; col < columns ; col++ ) {
             if ( 0 == matrix(row, col) ) {
@@ -170,7 +170,7 @@ Munkres::step1(void) {
                         isstarred = true;
                         break;
                     }
-                
+
                 if ( !isstarred ) {
                     for ( unsigned int ncol = 0 ; ncol < columns ; ncol++ )
                         if ( STAR == mask_matrix(row, ncol) ) {
@@ -178,14 +178,14 @@ Munkres::step1(void) {
                             break;
                         }
                 }
-                
+
                 if ( !isstarred ) {
                     mask_matrix(row,col) = STAR;
                 }
             }
         }
     }
-    
+
     return 2;
 }
 
@@ -194,21 +194,21 @@ Munkres::step2(void) {
     const unsigned int rows = matrix.rows,
     columns = matrix.cols;
     unsigned int covercount = 0;
-    
+
     for ( unsigned int row = 0 ; row < rows ; row++ )
         for ( unsigned int col = 0 ; col < columns ; col++ )
             if ( STAR == mask_matrix(row, col) ) {
                 col_mask[col] = true;
                 covercount++;
             }
-    
+
     if ( covercount >= minsize(matrix) ) {
         if(isDiag) {
             std::cout << "Final cover count: " << covercount << std::endl;
         }
         return 0;
     }
-    
+
     if(isDiag) {
         std::cout << "Munkres matrix has " << covercount << " of " << minsize(matrix) << " Columns covered:" << std::endl;
         for ( unsigned int row = 0 ; row < rows ; row++ ) {
@@ -220,8 +220,8 @@ Munkres::step2(void) {
         }
         std::cout << std::endl;
     }
-    
-    
+
+
     return 3;
 }
 
@@ -229,7 +229,7 @@ int
 Munkres::step3(void) {
     /*
      Main Zero Search
-     
+
      1. Find an uncovered Z in the distance matrix and prime it. If no such zero exists, go to Step 5
      2. If No Z* exists in the row of the Z', go to Step 4.
      3. If a Z* exists, cover this row and uncover the column of the Z*. Return to Step 3.1 to find a new Z
@@ -239,7 +239,7 @@ Munkres::step3(void) {
     } else {
         return 5;
     }
-    
+
     for ( unsigned int ncol = 0 ; ncol < matrix.cols ; ncol++ ) {
         if ( mask_matrix(saverow,ncol) == STAR ) {
             row_mask[saverow] = true; //cover this row and
@@ -247,7 +247,7 @@ Munkres::step3(void) {
             return 3; // repeat
         }
     }
-    
+
     return 4; // no starred zero in the row containing this primed zero
 }
 
@@ -255,29 +255,29 @@ int
 Munkres::step4(void) {
     const unsigned int rows = matrix.rows,
     columns = matrix.cols;
-    
+
     // seq contains pairs of row/column values where we have found
     // either a star or a prime that is part of the ``alternating sequence``.
     std::list<std::pair<int,int> > seq;
     // use saverow, savecol from step 3.
     std::pair<int,int> z0(saverow, savecol);
     seq.insert(seq.end(), z0);
-    
+
     // We have to find these two pairs:
     std::pair<int,int> z1(-1, -1);
     std::pair<int,int> z2n(-1, -1);
-    
+
     unsigned int row, col = savecol;
     /*
      Increment Set of Starred Zeros
-     
+
      1. Construct the ``alternating sequence'' of primed and starred zeros:
-     
+
      Z0 : Unpaired Z' from Step 4.2
      Z1 : The Z* in the column of Z0
      Z[2N] : The Z' in the row of Z[2N-1], if such a zero exists
      Z[2N+1] : The Z* in the column of Z[2N]
-     
+
      The sequence eventually terminates with an unpaired Z' = Z[2N] for some N.
      */
     bool madepair;
@@ -290,18 +290,18 @@ Munkres::step4(void) {
                 if ( pair_in_list(z1, seq) ) {
                     continue;
                 }
-                
+
                 madepair = true;
                 seq.insert(seq.end(), z1);
                 break;
             }
         }
-        
+
         if ( !madepair )
             break;
-        
+
         madepair = false;
-        
+
         for ( col = 0 ; col < columns ; col++ ) {
             if ( mask_matrix(row, col) == PRIME ) {
                 z2n.first = row;
@@ -315,20 +315,20 @@ Munkres::step4(void) {
             }
         }
     } while ( madepair );
-    
+
     for ( std::list<std::pair<int,int> >::iterator i = seq.begin() ;
          i != seq.end() ;
          i++ ) {
         // 2. Unstar each starred zero of the sequence.
         if ( mask_matrix(i->first,i->second) == STAR )
             mask_matrix(i->first,i->second) = NORMAL;
-        
+
         // 3. Star each primed zero of the sequence,
         // thus increasing the number of starred zeros by one.
         if ( mask_matrix(i->first,i->second) == PRIME )
             mask_matrix(i->first,i->second) = STAR;
     }
-    
+
     // 4. Erase all primes, uncover all columns and rows,
     for ( unsigned int row = 0 ; row < mask_matrix.rows ; row++ ) {
         for ( unsigned int col = 0 ; col < mask_matrix.cols ; col++ ) {
@@ -337,15 +337,15 @@ Munkres::step4(void) {
             }
         }
     }
-    
+
     for ( unsigned int i = 0 ; i < rows ; i++ ) {
         row_mask[i] = false;
     }
-    
+
     for ( unsigned int i = 0 ; i < columns ; i++ ) {
         col_mask[i] = false;
     }
-    
+
     // and return to Step 2.
     return 2;
 }
@@ -356,7 +356,7 @@ Munkres::step5(void) {
     columns = matrix.cols;
     /*
      New Zero Manufactures
-     
+
      1. Let h be the smallest uncovered entry in the (modified) distance matrix.
      2. Add h to all covered rows.
      3. Subtract h from all uncovered columns
@@ -374,7 +374,7 @@ Munkres::step5(void) {
             }
         }
     }
-    
+
     for ( unsigned int row = 0 ; row < rows ; row++ ) {
         if ( row_mask[row] ) {
             for ( unsigned int col = 0 ; col < columns ; col++ ) {
@@ -382,7 +382,7 @@ Munkres::step5(void) {
             }
         }
     }
-    
+
     for ( unsigned int col = 0 ; col < columns ; col++ ) {
         if ( !col_mask[col] ) {
             for ( unsigned int row = 0 ; row < rows ; row++ ) {
@@ -390,7 +390,7 @@ Munkres::step5(void) {
             }
         }
     }
-    
+
     return 3;
 }
 
@@ -409,7 +409,7 @@ Munkres::solve(cv::Mat_<int> &m) {
     const unsigned int rows = m.rows,
     columns = m.cols,
     size = std::max<unsigned int>(rows, columns);
-    
+
     if(isDiag) {
         std::cout << "Munkres input matrix:" << std::endl;
         for ( unsigned int row = 0 ; row < rows ; row++ ) {
@@ -421,44 +421,44 @@ Munkres::solve(cv::Mat_<int> &m) {
         }
         std::cout << std::endl;
     }
-    
+
     bool notdone = true;
     int step = 1;
-    
+
     // Copy input matrix
     this->matrix = m;
-    
+
     if ( rows != columns ) {
         // If the input matrix isn't square, make it square
         // and fill the empty values with the largest value present
         // in the matrix.
         extendMat(matrix, size, size, maxValue(matrix));
     }
-    
-    
+
+
     // STAR == 1 == starred, PRIME == 2 == primed
     //    mask_matrix.resize(size, size);
     extendMat(mask_matrix, size, size);
-    
+
     row_mask = new bool[size];
     col_mask = new bool[columns];
     for ( unsigned int i = 0 ; i < size ; i++ ) {
         row_mask[i] = false;
     }
-    
+
     for ( unsigned int i = 0 ; i < size ; i++ ) {
         col_mask[i] = false;
     }
-    
+
     // Prepare the matrix values...
-    
+
     // If there were any infinities, replace them with a value greater
     // than the maximum value in the matrix.
     replace_infinites(matrix);
-    
+
     minimize_along_direction(matrix, false);
     minimize_along_direction(matrix, true);
-    
+
     // Follow the steps
     while ( notdone ) {
         switch ( step ) {
@@ -488,7 +488,7 @@ Munkres::solve(cv::Mat_<int> &m) {
                 break;
         }
     }
-    
+
     // Store results
     for ( unsigned int row = 0 ; row < size ; row++ ) {
         for ( unsigned int col = 0 ; col < size ; col++ ) {
@@ -499,7 +499,7 @@ Munkres::solve(cv::Mat_<int> &m) {
             }
         }
     }
-    
+
     if(isDiag) {
         std::cout << "Munkres output matrix:" << std::endl;
         for ( unsigned int row = 0 ; row < rows ; row++ ) {
@@ -511,15 +511,15 @@ Munkres::solve(cv::Mat_<int> &m) {
         }
         std::cout << std::endl;
     }
-    
-    
+
+
     // Remove the excess rows or columns that we added to fit the
     // input to a square matrix.
     //    matrix.resize(rows, columns);
     extendMat(matrix, rows, columns);
-    
+
     m = matrix;
-    
+
     delete [] row_mask;
     delete [] col_mask;
 }
